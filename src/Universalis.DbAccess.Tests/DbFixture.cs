@@ -1,4 +1,5 @@
 ﻿using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,9 +13,9 @@ namespace Universalis.DbAccess.Tests;
 
 public class DbFixture : IAsyncLifetime
 {
-    private readonly TestcontainersContainer _scylla;
-    private readonly TestcontainersContainer _cache;
-    private readonly TestcontainersContainer _redis;
+    private readonly IDockerContainer _scylla;
+    private readonly IDockerContainer _cache;
+    private readonly IDockerContainer _redis;
 
     private readonly Lazy<IServiceProvider> _services;
 
@@ -24,28 +25,22 @@ public class DbFixture : IAsyncLifetime
     {
         _scylla = new TestcontainersBuilder<TestcontainersContainer>()
             .WithName(Guid.NewGuid().ToString("D"))
-            .WithImage("scylladb/scylla:5.1.0")
+            .WithImage("scylladb/scylla:5.1")
             .WithExposedPort(9042)
-            .WithPortBinding(9042, false)
-            .WithCommand("--smp", "1", "--overprovisioned", "1", "--memory", "512M", "--alternator-port", "8000", "--alternator-write-isolation", "only_rmw_uses_lwt")
+            .WithPortBinding(9042, true)
+            .WithCommand("--smp", "1", "--overprovisioned", "1", "--memory", "512M", "--skip-wait-for-gossip-to-settle", "0")
             .WithCreateContainerParametersModifier(o =>
             {
                 o.HostConfig.CPUCount = 1;
             })
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("[ $(nodetool statusgossip) = running ]"))
             .Build();
-        _cache = new TestcontainersBuilder<TestcontainersContainer>()
-            .WithName(Guid.NewGuid().ToString("D"))
-            .WithImage("redis:7.0.0")
-            .WithPortBinding(6379, true)
-            .WithCommand("redis-server", "--save", "", "--loglevel", "warning")
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(6379))
+
+        _cache = new TestcontainersBuilder<RedisTestcontainer>()
+            .WithDatabase(new RedisTestcontainerConfiguration("redis:7.0"))
             .Build();
-        _redis = new TestcontainersBuilder<TestcontainersContainer>()
-            .WithName(Guid.NewGuid().ToString("D"))
-            .WithImage("redis:7.0.0")
-            .WithPortBinding(6379, true)
-            .WithCommand("redis-server", "--save", "", "--loglevel", "warning")
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(6379))
+        _redis = new TestcontainersBuilder<RedisTestcontainer>()
+            .WithDatabase(new RedisTestcontainerConfiguration("redis:7.0"))
             .Build();
 
         _services = new Lazy<IServiceProvider>(CreateServiceProvider);
@@ -64,27 +59,29 @@ public class DbFixture : IAsyncLifetime
             {
                 { "RedisCacheConnectionString", $"{_cache.Hostname}:{_cache.GetMappedPublicPort(6379)}" },
                 { "RedisConnectionString", $"{_redis.Hostname}:{_redis.GetMappedPublicPort(6379)}" },
-                { "ScyllaConnectionString", "localhost" },
+                { "ScyllaConnectionString", $"127.0.0.1:{_scylla.GetMappedPublicPort(9042)}" },
             })
             .Build();
         services.AddLogging();
         services.AddSingleton<IConfiguration>(configuration);
-        Task.Delay(60000).GetAwaiter().GetResult();
         services.AddDbAccessServices(configuration);
         return services.BuildServiceProvider();
     }
 
     public async Task InitializeAsync()
     {
-        await _scylla.StartAsync().ConfigureAwait(false);
-        await _cache.StartAsync().ConfigureAwait(false);
-        await _redis.StartAsync().ConfigureAwait(false);
+        await Task.WhenAll(
+            _scylla.StartAsync(),
+            _cache.StartAsync(),
+            _redis.StartAsync()
+           );
+        await Task.Delay(2000);
     }
 
     public async Task DisposeAsync()
     {
-        await _redis.DisposeAsync().ConfigureAwait(false);
-        await _cache.DisposeAsync().ConfigureAwait(false);
-        await _scylla.DisposeAsync().ConfigureAwait(false);
+        await _redis.DisposeAsync();
+        await _cache.DisposeAsync();
+        await _scylla.DisposeAsync();
     }
 }

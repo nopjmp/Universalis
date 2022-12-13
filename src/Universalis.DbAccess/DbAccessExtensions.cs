@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using System;
 using System.Linq;
+using System.Net;
 using Universalis.DbAccess.AccessControl;
 using Universalis.DbAccess.MarketBoard;
 using Universalis.DbAccess.Uploads;
@@ -13,6 +14,11 @@ namespace Universalis.DbAccess;
 
 public static class DbAccessExtensions
 {
+    static DbAccessExtensions()
+    {
+        MappingConfiguration.Global.Define<ObjectMappings>();
+    }
+
     public static void AddDbAccessServices(this IServiceCollection sc, IConfiguration configuration)
     {
         var redisCacheConnectionString = Environment.GetEnvironmentVariable("UNIVERSALIS_REDIS_CACHE_CONNECTION") ??
@@ -28,10 +34,16 @@ public static class DbAccessExtensions
                                      throw new InvalidOperationException(
                                          "ScyllaDB cache connection string not provided.");
 
-        MappingConfiguration.Global.Define<ObjectMappings>();
-
+        // Hack to avoid manually parsing hostname:port / ip:port combos
+        var contactPoints = scyllaConnectionString.Split(',').SelectMany(s =>
+        {
+            var uri = new Uri("http://" + s);
+            var port = uri.IsDefaultPort ? 9042 : uri.Port;
+            var hostEntry = Dns.GetHostEntry(uri.DnsSafeHost);
+            return hostEntry.AddressList.Select(addr => new IPEndPoint(addr, port));
+        });
         var scyllaCluster = Cluster.Builder()
-            .AddContactPoints(scyllaConnectionString.Split(','))
+            .AddContactPoints(contactPoints)
             .Build();
         sc.AddSingleton<ICluster>(scyllaCluster);
 

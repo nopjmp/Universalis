@@ -6,7 +6,8 @@ using System.Linq;
 
 namespace Universalis.DbAccess.Tests.MarketBoard;
 
-public class CurrentlyShownStoreTests : IClassFixture<DbFixture>
+[Collection("Database collection")]
+public class CurrentlyShownStoreTests
 {
     private readonly DbFixture _fixture;
 
