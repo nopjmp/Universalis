@@ -90,7 +90,7 @@ public class MarketItemStore : IMarketItemStore
         }
     }
 
-    public async ValueTask<MarketItem> Retrieve(int worldId, int itemId, CancellationToken cancellationToken = default)
+    public async Task<MarketItem> Retrieve(int worldId, int itemId, CancellationToken cancellationToken = default)
     {
         // Try to retrieve data from the cache
         var cache = _cache.GetDatabase(RedisDatabases.Cache.MarketItem);

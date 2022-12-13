@@ -33,11 +33,11 @@ public class HistoryDbAccessTests
             return Task.CompletedTask;
         }
 
-        public ValueTask<MarketItem> Retrieve(int worldId, int itemId, CancellationToken cancellationToken = default)
+        public Task<MarketItem> Retrieve(int worldId, int itemId, CancellationToken cancellationToken = default)
         {
             return _data.TryGetValue((worldId, itemId), out var marketItem)
-                ? ValueTask.FromResult(marketItem)
-                : ValueTask.FromResult<MarketItem>(null);
+                ? Task.FromResult(marketItem)
+                : Task.FromResult<MarketItem>(null);
         }
     }
 
