@@ -12,7 +12,7 @@ public interface IHistoryDbAccess
 
     public Task<History> Retrieve(HistoryQuery query, CancellationToken cancellationToken = default);
 
-    public Task<IEnumerable<History>> RetrieveMany(HistoryManyQuery query, CancellationToken cancellationToken = default);
+    public IAsyncEnumerable<History> RetrieveMany(HistoryManyQuery query, CancellationToken cancellationToken = default);
 
     public Task InsertSales(IEnumerable<Sale> sales, HistoryQuery query, CancellationToken cancellationToken = default);
 }

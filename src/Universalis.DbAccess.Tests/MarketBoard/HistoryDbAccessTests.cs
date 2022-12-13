@@ -102,7 +102,7 @@ public class HistoryDbAccessTests
     public async Task RetrieveMany_DoesNotThrow()
     {
         var db = new HistoryDbAccess(new MockMarketItemStore(), new MockSaleStore());
-        var output = await db.RetrieveMany(new HistoryManyQuery { WorldIds = new int[] { 74 }, ItemId = 5333 });
+        var output = await db.RetrieveMany(new HistoryManyQuery { WorldIds = new int[] { 74 }, ItemId = 5333 }).ToListAsync();
         Assert.NotNull(output);
         Assert.Empty(output);
     }
@@ -149,8 +149,8 @@ public class HistoryDbAccessTests
         var document = SeedDataGenerator.MakeHistory(74, 5333);
         await db.Create(document);
 
-        var output = (await db.RetrieveMany(new HistoryManyQuery
-            { WorldIds = new[] { document.WorldId }, ItemId = document.ItemId }))?.ToList();
+        var output = await db.RetrieveMany(new HistoryManyQuery
+            { WorldIds = new[] { document.WorldId }, ItemId = document.ItemId }).ToListAsync();
 
         Assert.NotNull(output);
         Assert.Single(output);

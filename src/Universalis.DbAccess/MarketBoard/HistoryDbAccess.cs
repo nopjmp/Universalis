@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Universalis.DbAccess.Queries.MarketBoard;
@@ -49,11 +50,14 @@ public class HistoryDbAccess : IHistoryDbAccess
         };
     }
 
-    public async Task<IEnumerable<History>> RetrieveMany(HistoryManyQuery query, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<History> RetrieveMany(HistoryManyQuery query, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        return (await Task.WhenAll(query.WorldIds
-            .Select(worldId => Retrieve(new HistoryQuery { WorldId = worldId, ItemId = query.ItemId, Count = query.Count }, cancellationToken))))
-            .Where(h => h != null);
+        foreach (var worldId in query.WorldIds)
+        {
+            var result = await Retrieve(new HistoryQuery { WorldId = worldId, ItemId = query.ItemId, Count = query.Count }, cancellationToken);
+            if (result != null)
+                yield return result;
+        }
     }
 
     public async Task InsertSales(IEnumerable<Sale> sales, HistoryQuery query, CancellationToken cancellationToken = default)

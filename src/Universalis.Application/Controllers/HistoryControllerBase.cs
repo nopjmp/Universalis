@@ -32,18 +32,18 @@ public class HistoryControllerBase : WorldDcRegionControllerBase
         CancellationToken cancellationToken = default)
     {
         // Fetch the data
-        var data = (await History.RetrieveMany(new HistoryManyQuery
+        var data = History.RetrieveMany(new HistoryManyQuery
         {
             WorldIds = worldIds,
             ItemId = itemId,
             Count = entries,
-        }, cancellationToken)).ToList();
-        var resolved = data.Count > 0;
+        }, cancellationToken);
+        var resolved = await data.AnyAsync();
         var worlds = GameData.AvailableWorlds();
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var nowSeconds = now / 1000;
-        var history = await data.ToAsyncEnumerable()
+        var history = await data
             .Where(o => worlds.ContainsKey(o.WorldId))
             .AggregateAwaitAsync(new HistoryView(), async (agg, next) =>
             {
