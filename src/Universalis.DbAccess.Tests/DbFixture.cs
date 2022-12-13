@@ -28,12 +28,12 @@ public class DbFixture : IAsyncLifetime
             .WithImage("scylladb/scylla:5.1")
             .WithExposedPort(9042)
             .WithPortBinding(9042, true)
-            .WithCommand("--smp", "1", "--overprovisioned", "1", "--memory", "512M", "--skip-wait-for-gossip-to-settle", "0")
+            .WithCommand("--smp", "1", "--developer-mode", "1", "--overprovisioned", "1", "--memory", "512M", "--skip-wait-for-gossip-to-settle", "0")
             .WithCreateContainerParametersModifier(o =>
             {
                 o.HostConfig.CPUCount = 1;
             })
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("[ $(nodetool statusgossip) = running ]"))
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("[ $(nodetool statusbinary) = running ]"))
             .Build();
 
         _cache = new TestcontainersBuilder<RedisTestcontainer>()
@@ -59,7 +59,7 @@ public class DbFixture : IAsyncLifetime
             {
                 { "RedisCacheConnectionString", $"{_cache.Hostname}:{_cache.GetMappedPublicPort(6379)}" },
                 { "RedisConnectionString", $"{_redis.Hostname}:{_redis.GetMappedPublicPort(6379)}" },
-                { "ScyllaConnectionString", $"127.0.0.1:{_scylla.GetMappedPublicPort(9042)}" },
+                { "ScyllaConnectionString", $"{_scylla.Hostname}:{_scylla.GetMappedPublicPort(9042)}" },
             })
             .Build();
         services.AddLogging();
@@ -75,7 +75,6 @@ public class DbFixture : IAsyncLifetime
             _cache.StartAsync(),
             _redis.StartAsync()
            );
-        await Task.Delay(2000);
     }
 
     public async Task DisposeAsync()
