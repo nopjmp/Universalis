@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Universalis.Entities;
@@ -208,34 +209,45 @@ public class CurrentlyShownStore : ICurrentlyShownStore
         }
 
         var listingKeys = new RedisValue[] { "id", "hq", "mann", "ppu", "q", "did", "cid", "cname", "t", "rid", "rname", "rcid", "sid", "mat" };
-        var listingIds = ParseObjectIds(listingIdsRaw);
-        return await listingIds
-            .ToAsyncEnumerable()
-            .SelectAwait(async id =>
-            {
-                
-                var listingKey = GetListingKey(worldId, itemId, id);
-                var listingEntries = await db.HashGetAsync(listingKey, listingKeys, flags: CommandFlags.PreferReplica);
+        var listingIds = ParseObjectIds(listingIdsRaw).ToArray();
 
-                return new Listing
-                {
-                    ListingId = (string)listingEntries[0] ?? "",
-                    Hq = (bool)listingEntries[1],
-                    OnMannequin = (bool)listingEntries[2],
-                    PricePerUnit = (int)listingEntries[3],
-                    Quantity = (int)listingEntries[4],
-                    DyeId = (int)listingEntries[5],
-                    CreatorId = (string)listingEntries[6] ?? "",
-                    CreatorName = (string)listingEntries[7] ?? "",
-                    LastReviewTimeUnixSeconds = (long)listingEntries[8],
-                    RetainerId = (string)listingEntries[9] ?? "",
-                    RetainerName = (string)listingEntries[10] ?? "",
-                    RetainerCityId = (int)listingEntries[11],
-                    SellerId = (string)listingEntries[12] ?? "",
-                    Materia = GetValueMateriaArray(listingEntries[13]),
-                };
-            })
-            .ToListAsync(cancellationToken);
+        var opts = new ExecutionDataflowBlockOptions
+        {
+            MaxDegreeOfParallelism = 4,
+            CancellationToken = cancellationToken,
+        };
+
+        var transformBlock = new TransformBlock<Guid, Listing>(async id =>
+        {
+            var listingEntries = await db.HashGetAsync(GetListingKey(worldId, itemId, id), listingKeys, flags: CommandFlags.PreferReplica);
+            return new Listing
+            {
+                ListingId = (string)listingEntries[0] ?? "",
+                Hq = (bool)listingEntries[1],
+                OnMannequin = (bool)listingEntries[2],
+                PricePerUnit = (int)listingEntries[3],
+                Quantity = (int)listingEntries[4],
+                DyeId = (int)listingEntries[5],
+                CreatorId = (string)listingEntries[6] ?? "",
+                CreatorName = (string)listingEntries[7] ?? "",
+                LastReviewTimeUnixSeconds = (long)listingEntries[8],
+                RetainerId = (string)listingEntries[9] ?? "",
+                RetainerName = (string)listingEntries[10] ?? "",
+                RetainerCityId = (int)listingEntries[11],
+                SellerId = (string)listingEntries[12] ?? "",
+                Materia = GetValueMateriaArray(listingEntries[13]),
+            };
+        }, opts);
+
+        foreach (var id in listingIds)
+        {
+            transformBlock.Post(id);
+        }
+        transformBlock.Complete();
+
+        return await transformBlock
+            .ReceiveAllAsync()
+            .ToListAsync();
     }
 
     private static void SetListingsAtomic(ITransaction trans, int worldId, int itemId, IEnumerable<Guid> existingListingIds, IList<Listing> listings, TimeSpan? expiry = null)
