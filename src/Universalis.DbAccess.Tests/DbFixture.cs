@@ -24,7 +24,6 @@ public class DbFixture : IAsyncLifetime
     public DbFixture()
     {
         _scylla = new TestcontainersBuilder<TestcontainersContainer>()
-            .WithName(Guid.NewGuid().ToString("D"))
             .WithImage("scylladb/scylla:5.1")
             .WithExposedPort(9042)
             .WithPortBinding(9042, true)
