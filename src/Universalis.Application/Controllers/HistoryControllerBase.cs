@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,13 +46,9 @@ public class HistoryControllerBase : WorldDcRegionControllerBase
         var nowSeconds = now / 1000;
         var history = await data
             .Where(o => worlds.ContainsKey(o.WorldId))
-            .AggregateAwaitAsync(new HistoryView(), async (agg, next) =>
+            .AggregateAwaitAsync(new HistoryView(), (agg, next) =>
             {
-                // Handle undefined arrays
-                next.Sales ??= new List<Sale>();
-
-                agg.Sales = await next.Sales
-                    .ToAsyncEnumerable()
+                agg.Sales.AddRange(next.Sales
                     .Where(s => entriesWithin < 0 || nowSeconds - new DateTimeOffset(s.SaleTime).ToUnixTimeSeconds() < entriesWithin)
                     .Where(s => s.Quantity is > 0)
                     .Select(s => new MinimizedSaleView
@@ -64,12 +61,10 @@ public class HistoryControllerBase : WorldDcRegionControllerBase
                         TimestampUnixSeconds = new DateTimeOffset(s.SaleTime).ToUnixTimeSeconds(),
                         WorldId = !worldDcRegion.IsWorld ? next.WorldId : null,
                         WorldName = !worldDcRegion.IsWorld ? worlds[next.WorldId] : null,
-                    })
-                    .Concat(agg.Sales.ToAsyncEnumerable())
-                    .ToListAsync(cancellationToken);
+                    }));
                 agg.LastUploadTimeUnixMilliseconds = (long)Math.Max(next.LastUploadTimeUnixMilliseconds, agg.LastUploadTimeUnixMilliseconds);
 
-                return agg;
+                return ValueTask.FromResult(agg);
             }, cancellationToken);
 
         history.Sales = history.Sales.OrderByDescending(s => s.TimestampUnixSeconds).Take(entries).ToList();
@@ -86,21 +81,12 @@ public class HistoryControllerBase : WorldDcRegionControllerBase
             DcName = worldDcRegion.IsDc ? worldDcRegion.DcName : null,
             RegionName = worldDcRegion.IsRegion ? worldDcRegion.RegionName : null,
             LastUploadTimeUnixMilliseconds = history.LastUploadTimeUnixMilliseconds,
-            StackSizeHistogram = new SortedDictionary<int, int>(Statistics.GetDistribution(history.Sales
-                .Select(s => s.Quantity)
-                .Select(q => (int)q))),
-            StackSizeHistogramNq = new SortedDictionary<int, int>(Statistics.GetDistribution(nqSales
-                .Select(s => s.Quantity)
-                .Select(q => (int)q))),
-            StackSizeHistogramHq = new SortedDictionary<int, int>(Statistics.GetDistribution(hqSales
-                .Select(s => s.Quantity)
-                .Select(q => (int)q))),
-            SaleVelocity = Statistics.VelocityPerDay(history.Sales
-                .Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
-            SaleVelocityNq = Statistics.VelocityPerDay(nqSales
-                .Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
-            SaleVelocityHq = Statistics.VelocityPerDay(hqSales
-                .Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
+            StackSizeHistogram = Statistics.GetDistribution(history.Sales.Select(s => s.Quantity)).ToImmutableSortedDictionary(),
+            StackSizeHistogramNq = Statistics.GetDistribution(nqSales.Select(s => s.Quantity)).ToImmutableSortedDictionary(),
+            StackSizeHistogramHq = Statistics.GetDistribution(hqSales.Select(s => s.Quantity)).ToImmutableSortedDictionary(),
+            SaleVelocity = Statistics.VelocityPerDay(history.Sales.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
+            SaleVelocityNq = Statistics.VelocityPerDay(nqSales.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
+            SaleVelocityHq = Statistics.VelocityPerDay(hqSales.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
         });
     }
 }

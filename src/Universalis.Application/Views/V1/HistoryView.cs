@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
 namespace Universalis.Application.Views.V1;
@@ -52,19 +53,19 @@ public class HistoryView
     /// A map of quantities to sale counts, representing the number of sales of each quantity.
     /// </summary>
     [JsonPropertyName("stackSizeHistogram")]
-    public SortedDictionary<int, int> StackSizeHistogram { get; init; } = new();
+    public IDictionary<int, int> StackSizeHistogram { get; init; } = ImmutableDictionary<int, int>.Empty;
 
     /// <summary>
     /// A map of quantities to NQ sale counts, representing the number of sales of each quantity.
     /// </summary>
     [JsonPropertyName("stackSizeHistogramNQ")]
-    public SortedDictionary<int, int> StackSizeHistogramNq { get; init; } = new();
+    public IDictionary<int, int> StackSizeHistogramNq { get; init; } = ImmutableDictionary<int, int>.Empty;
 
     /// <summary>
     /// A map of quantities to HQ sale counts, representing the number of sales of each quantity.
     /// </summary>
     [JsonPropertyName("stackSizeHistogramHQ")]
-    public SortedDictionary<int, int> StackSizeHistogramHq { get; init; } = new();
+    public IDictionary<int, int> StackSizeHistogramHq { get; init; } = ImmutableDictionary<int, int>.Empty;
 
     /// <summary>
     /// The average number of sales per day, over the past seven days (or the entirety of the shown sales, whichever comes first).
