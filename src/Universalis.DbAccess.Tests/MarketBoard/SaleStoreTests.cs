@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Universalis.DbAccess.MarketBoard;
 using Universalis.Entities.MarketBoard;
 using Xunit;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace Universalis.DbAccess.Tests.MarketBoard;
 
@@ -141,7 +141,7 @@ public class SaleStoreTests
         };
 
         await store.Insert(sale);
-        await Task.Delay(1000);
+        //await Task.Delay(1000);
         var results = (await store.RetrieveBySaleTime(27, 5333, 1)).ToList();
 
         Assert.Single(results);
@@ -197,7 +197,7 @@ public class SaleStoreTests
         };
 
         await store.InsertMany(sales);
-        await Task.Delay(1000);
+        //await Task.Delay(1000);
         var results = (await store.RetrieveBySaleTime(25, 5333, 2)).ToList();
 
         Assert.Equal(2, results.Count);
@@ -226,9 +226,8 @@ public class SaleStoreTests
         var sales = SeedDataGenerator.MakeHistory(74, 33922).Sales.OrderByDescending(s => s.SaleTime).ToList();
 
         await store.InsertMany(sales);
-        await Task.Delay(1000);
         var results1 = (await store.RetrieveBySaleTime(74, 33922, sales.Count)).ToList();
-
+            
         Assert.Equal(sales.Count, results1.Count);
         Assert.All(sales.Zip(results1.OrderByDescending(s => s.SaleTime)), pair =>
         {
@@ -244,5 +243,45 @@ public class SaleStoreTests
             Assert.Equal(new DateTimeOffset(sale.SaleTime).ToUnixTimeSeconds(), new DateTimeOffset(result.SaleTime).ToUnixTimeSeconds());
             Assert.Equal(sale.UploaderIdHash, result.UploaderIdHash);
         });
+    }
+
+#if DEBUG
+    [Fact]
+#endif
+    public async Task RetrieveUnitTradeVolume_Works()
+    {
+        var store = _fixture.Services.GetRequiredService<ISaleStore>();
+        var sales = SeedDataGenerator.MakeHistory(77, 13709).Sales.OrderByDescending(s => s.SaleTime).ToList();
+
+        await store.InsertMany(sales);
+        //await Task.Delay(1000);
+
+        var from = DateTime.UtcNow;
+        var to = DateTime.UtcNow.AddDays(-1);
+        var result = await store.RetrieveUnitTradeVolume(77, 13709, from, to);
+
+        var linqResult = sales.Where(s => s.SaleTime >= from && s.SaleTime <= to).Sum(s => s.Quantity ?? 0);
+
+        Assert.Equal(linqResult, result);
+    }
+
+#if DEBUG
+    [Fact]
+#endif
+    public async Task RetrieveGilTradeVolume_Works()
+    {
+        var store = _fixture.Services.GetRequiredService<ISaleStore>();
+        var sales = SeedDataGenerator.MakeHistory(95, 13709).Sales.OrderByDescending(s => s.SaleTime).ToList();
+
+        await store.InsertMany(sales);
+        //await Task.Delay(1000);
+
+        var from = DateTime.UtcNow;
+        var to = DateTime.UtcNow.AddDays(-1);
+        var result = await store.RetrieveGilTradeVolume(74, 13709, from, to);
+
+        var linqResult = sales.Where(s => s.SaleTime >= from && s.SaleTime <= to).Sum(s => s.PricePerUnit);
+
+        Assert.Equal(linqResult, result);
     }
 }

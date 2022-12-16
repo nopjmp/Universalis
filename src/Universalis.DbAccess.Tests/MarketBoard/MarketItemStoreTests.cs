@@ -47,7 +47,7 @@ public class MarketItemStoreTests
         };
 
         await store.Insert(marketItem);
-        await Task.Delay(1000);
+        //await Task.Delay(1000);
         var result = await store.Retrieve(93, 5);
 
         Assert.NotNull(result);
@@ -73,7 +73,7 @@ public class MarketItemStoreTests
         await store.Insert(marketItem);
         marketItem.LastUploadTime = updatedTime;
         await store.Update(marketItem);
-        await Task.Delay(1000);
+        //await Task.Delay(1000);
         var result = await store.Retrieve(93, 5333);
 
         Assert.NotNull(result);
@@ -96,7 +96,7 @@ public class MarketItemStoreTests
         };
         
         await store.Update(marketItem);
-        await Task.Delay(1000);
+        //await Task.Delay(1000);
         var result = await store.Retrieve(93, 32000);
 
         Assert.NotNull(result);

@@ -46,13 +46,14 @@ public static class SeedDataGenerator
     public static History MakeHistory(int worldId, int itemId, long? lastUploadTime = null, int? maxStackSize = 999)
     {
         var rand = new Random();
+        var startTime = DateTime.UtcNow;
         return new History
         {
             WorldId = worldId,
             ItemId = itemId,
             LastUploadTimeUnixMilliseconds = lastUploadTime ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            Sales = Enumerable.Range(0, 100)
-                .Select(_ => new Sale
+            Sales = Enumerable.Range(0, 500)
+                .Select(i => new Sale
                 {
                     Id = Guid.NewGuid(),
                     WorldId = worldId,
@@ -60,7 +61,7 @@ public static class SeedDataGenerator
                     Hq = rand.NextDouble() > 0.5,
                     PricePerUnit = rand.Next(100, 60000),
                     Quantity = rand.Next(1, (int)maxStackSize),
-                    SaleTime = DateTime.UtcNow - new TimeSpan(rand.Next(0, 2100000000)),
+                    SaleTime = startTime - new TimeSpan(i, rand.Next(0, 59), rand.Next(0, 59)), // Prevent collision as this is a clustering key
                     UploaderIdHash = "2A",
                 })
                 .ToList(),
