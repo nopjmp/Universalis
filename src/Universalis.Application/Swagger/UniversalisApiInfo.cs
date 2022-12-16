@@ -1,6 +1,6 @@
-﻿using Microsoft.OpenApi.Models;
-using System;
+﻿using System;
 using System.Text;
+using Microsoft.OpenApi.Models;
 
 namespace Universalis.Application.Swagger;
 

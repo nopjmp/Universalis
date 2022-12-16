@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using System;
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
-using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Universalis.Application.Realtime;
 using Universalis.Application.Realtime.Messages;
 using Universalis.Application.Swagger;

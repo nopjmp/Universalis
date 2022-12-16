@@ -1,5 +1,5 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using System.Threading;
 using Universalis.DbAccess.Queries.MarketBoard;
 
 namespace Universalis.DbAccess.MarketBoard;

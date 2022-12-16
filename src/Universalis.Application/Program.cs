@@ -1,7 +1,7 @@
+using System.Threading;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Threading;
 
 namespace Universalis.Application;
 

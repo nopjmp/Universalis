@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using Prometheus;
+﻿using Prometheus;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Universalis.Application.Realtime.Messages;
 
 namespace Universalis.Application.Realtime;

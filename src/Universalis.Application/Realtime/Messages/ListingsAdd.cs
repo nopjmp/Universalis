@@ -1,5 +1,5 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using MongoDB.Bson.Serialization.Attributes;
 using Universalis.Application.Views.V1;
 
 namespace Universalis.Application.Realtime.Messages;

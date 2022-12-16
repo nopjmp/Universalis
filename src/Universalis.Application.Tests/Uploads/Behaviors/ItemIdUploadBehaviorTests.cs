@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Universalis.Application.Tests.Mocks.DbAccess.Uploads;
 using Universalis.Application.Tests.Mocks.GameData;
 using Universalis.Application.Uploads.Behaviors;
