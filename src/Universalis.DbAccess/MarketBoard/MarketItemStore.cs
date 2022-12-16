@@ -1,10 +1,10 @@
-﻿using Cassandra;
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Cassandra;
 using Cassandra.Data.Linq;
 using Cassandra.Mapping;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Universalis.Entities.MarketBoard;
 
 namespace Universalis.DbAccess.MarketBoard;

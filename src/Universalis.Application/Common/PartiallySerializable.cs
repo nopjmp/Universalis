@@ -2,7 +2,7 @@
 using System.Text.Json.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace Universalis.Application.Common; 
+namespace Universalis.Application.Common;
 
 public abstract class PartiallySerializable {
     

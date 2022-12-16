@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using System;
 using Universalis.DbAccess.MarketBoard;
 using Universalis.Entities.MarketBoard;
 using Xunit;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Universalis.DbAccess.Tests.MarketBoard;
 
