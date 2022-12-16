@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +7,6 @@ using Universalis.Application.Views.V1;
 using Universalis.DataTransformations;
 using Universalis.DbAccess.MarketBoard;
 using Universalis.DbAccess.Queries.MarketBoard;
-using Universalis.Entities.MarketBoard;
 using Universalis.GameData;
 
 namespace Universalis.Application.Controllers;
@@ -81,9 +78,9 @@ public class HistoryControllerBase : WorldDcRegionControllerBase
             DcName = worldDcRegion.IsDc ? worldDcRegion.DcName : null,
             RegionName = worldDcRegion.IsRegion ? worldDcRegion.RegionName : null,
             LastUploadTimeUnixMilliseconds = history.LastUploadTimeUnixMilliseconds,
-            StackSizeHistogram = Statistics.GetDistribution(history.Sales.Select(s => s.Quantity)).ToImmutableSortedDictionary(),
-            StackSizeHistogramNq = Statistics.GetDistribution(nqSales.Select(s => s.Quantity)).ToImmutableSortedDictionary(),
-            StackSizeHistogramHq = Statistics.GetDistribution(hqSales.Select(s => s.Quantity)).ToImmutableSortedDictionary(),
+            StackSizeHistogram = Statistics.GetDistribution(history.Sales.Select(s => s.Quantity)),
+            StackSizeHistogramNq = Statistics.GetDistribution(nqSales.Select(s => s.Quantity)),
+            StackSizeHistogramHq = Statistics.GetDistribution(hqSales.Select(s => s.Quantity)),
             SaleVelocity = Statistics.VelocityPerDay(history.Sales.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
             SaleVelocityNq = Statistics.VelocityPerDay(nqSales.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
             SaleVelocityHq = Statistics.VelocityPerDay(hqSales.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
