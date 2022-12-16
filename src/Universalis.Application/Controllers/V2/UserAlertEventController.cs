@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Universalis.Application.Swagger;
 using Universalis.Application.Views.V2;
 using Universalis.Mogboard;

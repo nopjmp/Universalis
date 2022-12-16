@@ -1,5 +1,5 @@
-﻿using System.Text.Json.Serialization;
-using MongoDB.Bson.Serialization.Attributes;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using System.Text.Json.Serialization;
 
 namespace Universalis.Application.Views.V1;
 

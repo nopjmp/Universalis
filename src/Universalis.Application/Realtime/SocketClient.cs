@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.IO;
+using MongoDB.Bson;
+using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
 using Priority_Queue;
 using Prometheus;
 using System;
@@ -8,9 +11,6 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using MongoDB.Bson;
-using MongoDB.Bson.IO;
-using MongoDB.Bson.Serialization;
 using Universalis.Application.Realtime.Messages;
 
 namespace Universalis.Application.Realtime;

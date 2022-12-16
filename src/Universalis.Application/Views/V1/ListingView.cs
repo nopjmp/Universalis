@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using MongoDB.Bson.Serialization.Attributes;
 using Universalis.Application.Common;
 using Universalis.Common.Caching;
 

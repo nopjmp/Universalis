@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.AspNetCore.Mvc;
 using Universalis.Application.Swagger;
 using TimeZone = Universalis.Application.Views.V3.Miscellaneous.TimeZone;
 

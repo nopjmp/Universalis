@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
-using Xunit;
 using Universalis.DbAccess.AccessControl;
 using Universalis.Entities.AccessControl;
+using Xunit;
 
 namespace Universalis.DbAccess.Tests.AccessControl;
 
