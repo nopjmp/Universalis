@@ -91,7 +91,7 @@ public class HistoryController : HistoryControllerBase
                 return NotFound();
             }
 
-            var (_, historyView) = await GetHistoryView(worldDc, worldIds, itemId, entries, statsWithinMs, entriesWithinSeconds, cts.Token);
+            var historyView = await GetHistoryView(worldDc, worldIds, itemId, entries, statsWithinMs, entriesWithinSeconds, cts.Token);
             return Ok(historyView);
         }
 
@@ -101,15 +101,15 @@ public class HistoryController : HistoryControllerBase
             .ToList();
         var historyViews = await Task.WhenAll(historyViewTasks);
         var unresolvedItems = historyViews
-            .Where(hv => !hv.Item1)
-            .Select(hv => hv.Item2.ItemId)
+            .Where(hv => hv.LastUploadTimeUnixMilliseconds <= 0)
+            .Select(hv => hv.ItemId)
             .ToArray();
         return Ok(new HistoryMultiView
         {
             ItemIds = itemIdsArray,
             Items = historyViews
-                .Where(hv => hv.Item1)
-                .Select(hv => hv.Item2)
+                .Where(hv => hv.LastUploadTimeUnixMilliseconds > 0)
+                .Select(hv => hv)
                 .ToList(),
             WorldId = worldDc.IsWorld ? worldDc.WorldId : null,
             WorldName = worldDc.IsWorld ? worldDc.WorldName : null,

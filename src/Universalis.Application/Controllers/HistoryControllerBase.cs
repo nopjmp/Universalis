@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ public class HistoryControllerBase : WorldDcRegionControllerBase
         History = historyDb;
     }
 
-    protected async Task<(bool, HistoryView)> GetHistoryView(
+    protected async Task<HistoryView> GetHistoryView(
         WorldDcRegion worldDcRegion,
         int[] worldIds,
         int itemId,
@@ -36,16 +37,16 @@ public class HistoryControllerBase : WorldDcRegionControllerBase
             ItemId = itemId,
             Count = entries,
         }, cancellationToken);
-        var resolved = await data.AnyAsync();
         var worlds = GameData.AvailableWorlds();
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var nowSeconds = now / 1000;
-        var history = await data
+        var (lastUploadTimeUnixMilliseconds, salesHistory) = await data
             .Where(o => worlds.ContainsKey(o.WorldId))
-            .AggregateAwaitAsync(new HistoryView(), (agg, next) =>
+            .AggregateAwaitAsync((0L, new List<MinimizedSaleView>(entries)), (agg, next) =>
             {
-                agg.Sales.AddRange(next.Sales
+                var (uploadTimeUnixMilliseconds, saleViews) = agg;
+                saleViews.AddRange(next.Sales
                     .Where(s => entriesWithin < 0 || nowSeconds - new DateTimeOffset(s.SaleTime).ToUnixTimeSeconds() < entriesWithin)
                     .Where(s => s.Quantity is > 0)
                     .Select(s => new MinimizedSaleView
@@ -59,31 +60,33 @@ public class HistoryControllerBase : WorldDcRegionControllerBase
                         WorldId = !worldDcRegion.IsWorld ? next.WorldId : null,
                         WorldName = !worldDcRegion.IsWorld ? worlds[next.WorldId] : null,
                     }));
-                agg.LastUploadTimeUnixMilliseconds = (long)Math.Max(next.LastUploadTimeUnixMilliseconds, agg.LastUploadTimeUnixMilliseconds);
+                uploadTimeUnixMilliseconds = (long)Math.Max(next.LastUploadTimeUnixMilliseconds, uploadTimeUnixMilliseconds);
 
-                return ValueTask.FromResult(agg);
+                return ValueTask.FromResult((uploadTimeUnixMilliseconds, saleViews));
             }, cancellationToken);
 
-        history.Sales = history.Sales.OrderByDescending(s => s.TimestampUnixSeconds).Take(entries).ToList();
+        salesHistory = salesHistory.OrderByDescending(s => s.TimestampUnixSeconds)
+            .Take(entries)
+            .ToList();
 
-        var nqSales = history.Sales.Where(s => !s.Hq).ToList();
-        var hqSales = history.Sales.Where(s => s.Hq).ToList();
+        var nqSales = salesHistory.Where(s => !s.Hq).ToList();
+        var hqSales = salesHistory.Where(s => s.Hq).ToList();
 
-        return (resolved, new HistoryView
+        return new HistoryView
         {
-            Sales = history.Sales.Take(entries).ToList(),
+            Sales = salesHistory.ToList(),
             ItemId = itemId,
             WorldId = worldDcRegion.IsWorld ? worldDcRegion.WorldId : null,
             WorldName = worldDcRegion.IsWorld ? worldDcRegion.WorldName : null,
             DcName = worldDcRegion.IsDc ? worldDcRegion.DcName : null,
             RegionName = worldDcRegion.IsRegion ? worldDcRegion.RegionName : null,
-            LastUploadTimeUnixMilliseconds = history.LastUploadTimeUnixMilliseconds,
-            StackSizeHistogram = Statistics.GetDistribution(history.Sales.Select(s => s.Quantity)),
+            LastUploadTimeUnixMilliseconds = lastUploadTimeUnixMilliseconds,
+            StackSizeHistogram = Statistics.GetDistribution(salesHistory.Select(s => s.Quantity)),
             StackSizeHistogramNq = Statistics.GetDistribution(nqSales.Select(s => s.Quantity)),
             StackSizeHistogramHq = Statistics.GetDistribution(hqSales.Select(s => s.Quantity)),
-            SaleVelocity = Statistics.VelocityPerDay(history.Sales.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
+            SaleVelocity = Statistics.VelocityPerDay(salesHistory.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
             SaleVelocityNq = Statistics.VelocityPerDay(nqSales.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
             SaleVelocityHq = Statistics.VelocityPerDay(hqSales.Select(s => s.TimestampUnixSeconds * 1000), now, statsWithin),
-        });
+        };
     }
 }
